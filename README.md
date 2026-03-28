@@ -19,7 +19,7 @@ SyncFlow AI 是一款基于 LLM 的智能任务管理工具，通过自然语言
 
 项目从交互效率维度进行了量化评估，点击下方链接查看详细报告：
 
-👉 [**点击查看：效能与人因分析报告**](./System_Efficiency_Report.md)
+👉 [**点击查看：效能与人因分析报告**](docs./System_Efficiency_Report.md)
 
 ---
 
@@ -40,7 +40,7 @@ graph TD
 
 - **Frontend**：Flutter (Dart) - 高性能、多端适配的响应式 UI。
 - **Backend**：Python / FastAPI - 支持高并发的异步逻辑控制面。
-- **AI Engine**：Google Gemini API - 负责意图识别与实体提取。
+- **AI Engine**：doubao API - 负责意图识别与实体提取。
 - **Database**：SQLite - 轻量化的本地日程存储方案。
 
 ---
