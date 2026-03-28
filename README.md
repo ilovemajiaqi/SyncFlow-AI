@@ -19,7 +19,7 @@ SyncFlow AI 是一款基于 LLM 的智能任务管理工具，通过自然语言
 
 项目从交互效率维度进行了量化评估，点击下方链接查看详细报告：
 
-👉 [**点击查看：效能与人因分析报告**](docs./System_Efficiency_Report.md)
+👉 [**点击查看：效能与人因分析报告**](./docs/System_Efficiency_Report.md)
 
 ---
 
