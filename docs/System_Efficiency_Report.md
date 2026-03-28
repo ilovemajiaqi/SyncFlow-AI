@@ -57,9 +57,9 @@ $$
 **约束条件 (Constraints):**
 
 $$
-s.t. \quad \text{Deadline}_i \le T_{end}
+s\text{.}t\text{.} \quad \text{Deadline}_i \le T_{end}
 $$
 
 $$
-s.t. \quad \text{Overlap}(Event_A, Event_B) = 0
+s\text{.}t\text{.} \quad \text{Overlap}(Event_A, Event_B) = 0
 $$
