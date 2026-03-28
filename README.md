@@ -29,7 +29,7 @@ SyncFlow AI 是一款基于 LLM 的智能任务管理工具，通过自然语言
 graph TD
     User((用户)) -->|自然语言| App[Flutter Mobile App]
     App -->|JSON API| Server[FastAPI Backend]
-    Server -->|Prompt| LLM[Gemini-2.5-Flash]
+    Server -->|Prompt| LLM[doubao-1-5-pro-32k]
     LLM -->|Structured Data| Server
     Server -->|DAO| DB[(SQLite / Cloud)]
 ```
