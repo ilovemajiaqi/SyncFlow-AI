@@ -59,3 +59,7 @@ $$
 $$
 s.t. \quad \text{Deadline}_i \le T_{end}
 $$
+
+$$
+s.t. \quad \text{Overlap}(Event_A, Event_B) = 0
+$$
