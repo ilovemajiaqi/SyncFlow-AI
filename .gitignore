@@ -1,0 +1,34 @@
+.DS_Store
+Thumbs.db
+
+# Local IDE settings
+.idea/
+.vscode/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.log
+*.db
+*.sqlite
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Local docs not intended for GitHub
+docs/
+
+# Flutter / Dart
+syncflow_flutter/.dart_tool/
+syncflow_flutter/.flutter-plugins
+syncflow_flutter/.flutter-plugins-dependencies
+syncflow_flutter/.packages
+syncflow_flutter/build/
+
+# Android / IntelliJ generated files inside Flutter app
+syncflow_flutter/android/.gradle/
+syncflow_flutter/android/build/
+syncflow_flutter/android/local.properties
