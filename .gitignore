@@ -1,4 +1,4 @@
-.DS_Store
+﻿.DS_Store
 Thumbs.db
 
 # Local IDE settings
@@ -18,8 +18,7 @@ __pycache__/
 .env.*
 !.env.example
 
-# Local docs not intended for GitHub
-docs/
+# Local docs not intended for GitHub`r`n# docs/
 
 # Flutter / Dart
 syncflow_flutter/.dart_tool/
@@ -32,3 +31,4 @@ syncflow_flutter/build/
 syncflow_flutter/android/.gradle/
 syncflow_flutter/android/build/
 syncflow_flutter/android/local.properties
+
