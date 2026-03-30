@@ -70,24 +70,24 @@ SyncFlow AI 是一款基于 LLM 的智能任务管理工具，通过自然语言
     <td width="50%" valign="top">
       <h3>🏠 首页总览</h3>
       <p>展示今日任务、时间分布与核心操作入口。</p>
-      <img src="./assets/screenshots/home.svg" alt="SyncFlow 首页总览" width="100%" />
+      <img src="./assets/screenshots/home.jpg" alt="SyncFlow 首页总览" width="100%" />
     </td>
     <td width="50%" valign="top">
       <h3>🕒 时间线视图</h3>
       <p>按时间顺序呈现事件编排，强化日程感知。</p>
-      <img src="./assets/screenshots/timeline.svg" alt="SyncFlow 时间线视图" width="100%" />
+      <img src="./assets/screenshots/timeline.jpg" alt="SyncFlow 时间线视图" width="100%" />
     </td>
   </tr>
   <tr>
     <td width="50%" valign="top">
       <h3>⚙️ 设置中心</h3>
       <p>配置 API Key、模型参数与默认行为。</p>
-      <img src="./assets/screenshots/settings.svg" alt="SyncFlow 设置中心" width="100%" />
+      <img src="./assets/screenshots/settings.jpg" alt="SyncFlow 设置中心" width="100%" />
     </td>
     <td width="50%" valign="top">
       <h3>🎙️ 自然语言输入区</h3>
       <p>通过一句话完成任务录入与调度触发。</p>
-      <img src="./assets/screenshots/input.svg" alt="SyncFlow 自然语言输入区" width="100%" />
+      <img src="./assets/screenshots/input.jpg" alt="SyncFlow 自然语言输入区" width="100%" />
     </td>
   </tr>
 </table>
