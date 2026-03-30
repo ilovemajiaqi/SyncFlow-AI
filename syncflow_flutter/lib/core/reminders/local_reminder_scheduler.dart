@@ -12,6 +12,8 @@ abstract class LocalReminderScheduler {
     required UserApiSettings defaults,
   });
   Future<void> cancelEventReminder(int eventId);
+  Future<void> syncPersistentOverview(EventModel? nextEvent);
+  Future<void> cancelPersistentOverview();
 }
 
 LocalReminderScheduler createLocalReminderScheduler() => createPlatformReminderScheduler();

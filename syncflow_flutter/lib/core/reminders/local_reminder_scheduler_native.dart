@@ -14,7 +14,12 @@ class NativeLocalReminderScheduler implements LocalReminderScheduler {
   static const _channelName = 'SyncFlow Event Alerts';
   static const _channelDescription =
       'Heads-up and notification center reminders for upcoming events.';
+  static const _overviewChannelId = 'syncflow_upcoming_overview_v1';
+  static const _overviewChannelName = 'SyncFlow Upcoming Event';
+  static const _overviewChannelDescription =
+      'Persistent reminder for the next upcoming event.';
   static const _androidIcon = '@mipmap/ic_launcher';
+  static const _overviewNotificationId = 990001;
 
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
@@ -60,6 +65,17 @@ class NativeLocalReminderScheduler implements LocalReminderScheduler {
         showBadge: true,
       ),
     );
+    await androidPlugin?.createNotificationChannel(
+      const AndroidNotificationChannel(
+        _overviewChannelId,
+        _overviewChannelName,
+        description: _overviewChannelDescription,
+        importance: Importance.low,
+        playSound: false,
+        enableVibration: false,
+        showBadge: false,
+      ),
+    );
 
     await _plugin
         .resolvePlatformSpecificImplementation<
@@ -95,7 +111,7 @@ class NativeLocalReminderScheduler implements LocalReminderScheduler {
         id: _notificationId(event.id, 0),
         scheduledTime: centerTime,
         title: '即将开始',
-        body: '${event.displayTitle} - ${DateTimeFormatter.time(event.startTime)}',
+        body: '${event.displayTitle} · ${DateTimeFormatter.time(event.startTime)}',
       );
     }
 
@@ -109,8 +125,7 @@ class NativeLocalReminderScheduler implements LocalReminderScheduler {
     while (!current.isAfter(event.startTime)) {
       if (!current.isBefore(DateTime.now())) {
         final remainingMinutes = event.startTime.difference(current).inMinutes;
-        final title =
-            remainingMinutes > 0 ? '还有 $remainingMinutes 分钟' : '现在开始';
+        final title = remainingMinutes > 0 ? '还有 $remainingMinutes 分钟' : '现在开始';
         await _scheduleNotification(
           id: _notificationId(event.id, sequence),
           scheduledTime: current,
@@ -139,6 +154,59 @@ class NativeLocalReminderScheduler implements LocalReminderScheduler {
     for (int index = 0; index < 40; index++) {
       await _plugin.cancel(id: _notificationId(eventId, index));
     }
+  }
+
+  @override
+  Future<void> syncPersistentOverview(EventModel? nextEvent) async {
+    await initialize();
+    if (nextEvent == null) {
+      await cancelPersistentOverview();
+      return;
+    }
+
+    final startLabel = DateTimeFormatter.full(nextEvent.startTime);
+    final endLabel = DateTimeFormatter.time(nextEvent.endTime);
+
+    const details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        _overviewChannelId,
+        _overviewChannelName,
+        channelDescription: _overviewChannelDescription,
+        importance: Importance.low,
+        priority: Priority.low,
+        category: AndroidNotificationCategory.status,
+        playSound: false,
+        enableVibration: false,
+        ongoing: true,
+        autoCancel: false,
+        onlyAlertOnce: true,
+        showWhen: true,
+        visibility: NotificationVisibility.public,
+      ),
+      iOS: DarwinNotificationDetails(
+        presentAlert: false,
+        presentBadge: false,
+        presentSound: false,
+      ),
+      macOS: DarwinNotificationDetails(
+        presentAlert: false,
+        presentBadge: false,
+        presentSound: false,
+      ),
+    );
+
+    await _plugin.show(
+      id: _overviewNotificationId,
+      title: '下一个事件：${nextEvent.displayTitle}',
+      body: '$startLabel 开始，$endLabel 结束',
+      notificationDetails: details,
+    );
+  }
+
+  @override
+  Future<void> cancelPersistentOverview() async {
+    await initialize();
+    await _plugin.cancel(id: _overviewNotificationId);
   }
 
   Future<void> _requestNotificationPermissionIfNeeded() async {
@@ -236,6 +304,12 @@ class DateTimeFormatter {
     final hour = dateTime.hour.toString().padLeft(2, '0');
     final minute = dateTime.minute.toString().padLeft(2, '0');
     return '$hour:$minute';
+  }
+
+  static String full(DateTime dateTime) {
+    final month = dateTime.month.toString().padLeft(2, '0');
+    final day = dateTime.day.toString().padLeft(2, '0');
+    return '$month-$day ${time(dateTime)}';
   }
 }
 

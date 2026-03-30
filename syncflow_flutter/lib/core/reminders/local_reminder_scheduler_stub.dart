@@ -11,11 +11,17 @@ class StubLocalReminderScheduler implements LocalReminderScheduler {
   Future<void> cancelEventReminder(int eventId) async {}
 
   @override
+  Future<void> cancelPersistentOverview() async {}
+
+  @override
   Future<void> syncEventReminder(
     EventModel event, {
     required EventReminderConfig reminder,
     required UserApiSettings defaults,
   }) async {}
+
+  @override
+  Future<void> syncPersistentOverview(EventModel? nextEvent) async {}
 }
 
 LocalReminderScheduler createPlatformReminderScheduler() => StubLocalReminderScheduler();

@@ -4,6 +4,7 @@ import 'package:sqflite/sqflite.dart';
 import '../../core/ai/generic_ai_service.dart';
 import '../../core/ai/parsed_schedule.dart';
 import '../local/app_database.dart';
+import '../models/event_conflict.dart';
 import '../models/event_model.dart';
 import '../models/intent_parse_models.dart';
 
@@ -63,6 +64,46 @@ class ScheduleRepository {
     }
   }
 
+  Future<List<EventModel>> fetchUpcomingActiveEvents() async {
+    try {
+      final rows = await _database.database.query(
+        AppDatabase.eventsTable,
+        where: 'status = ? AND start_time >= ?',
+        whereArgs: [1, DateTime.now().toUtc().toIso8601String()],
+        orderBy: 'start_time ASC',
+      );
+
+      return rows.map(EventModel.fromDatabase).toList();
+    } on DatabaseException {
+      throw Exception('读取本地日程失败了，请稍后再试。');
+    }
+  }
+
+  Future<List<EventModel>> findConflictingEvents({
+    required DateTime startTime,
+    required int durationMinutes,
+    int? excludeEventId,
+  }) async {
+    final endTime = startTime.add(Duration(minutes: durationMinutes));
+
+    try {
+      final rows = await _database.database.query(
+        AppDatabase.eventsTable,
+        where: 'status = ? AND start_time < ?',
+        whereArgs: [1, endTime.toUtc().toIso8601String()],
+        orderBy: 'start_time ASC',
+      );
+
+      return rows
+          .map(EventModel.fromDatabase)
+          .where((event) => excludeEventId == null || event.id != excludeEventId)
+          .where((event) => event.endTime.isAfter(startTime))
+          .toList(growable: false);
+    } on DatabaseException {
+      throw Exception('检查时间冲突失败了，请稍后再试。');
+    }
+  }
+
   Future<IntentParseResponse> parseIntent(String text) async {
     try {
       final parsedSchedule = await _aiService.parseSchedule(text);
@@ -71,11 +112,23 @@ class ScheduleRepository {
       final locationLabel = event.location?.trim().isNotEmpty == true
           ? '，地点：${event.location!.trim()}'
           : '';
+      final conflicts = await findConflictingEvents(
+        startTime: event.startTime,
+        durationMinutes: event.durationMinutes,
+        excludeEventId: event.id,
+      );
+      final conflictMessage =
+          conflicts.isEmpty ? '' : '，但与 ${conflicts.length} 个日程存在时间冲突';
 
       return IntentParseResponse(
         success: true,
-        message: '已在本地创建“${event.displayTitle}”，时间：$timeLabel$locationLabel',
+        message:
+            '已在本地创建“${event.displayTitle}”，时间：$timeLabel$locationLabel$conflictMessage',
         affectedEvents: [event],
+        conflicts: [
+          if (conflicts.isNotEmpty)
+            EventConflict(event: event, conflictsWith: conflicts),
+        ],
       );
     } on GenericAiException catch (error) {
       throw Exception(error.message);
@@ -141,8 +194,7 @@ class ScheduleRepository {
     }
   }
 
-  Future<EventModel> _insertParsedSchedule(
-      ParsedSchedule parsedSchedule) async {
+  Future<EventModel> _insertParsedSchedule(ParsedSchedule parsedSchedule) async {
     final startTime = parsedSchedule.startTime.toLocal();
     final endTime = parsedSchedule.endTime.toLocal();
     final durationMinutes = endTime.difference(startTime).inMinutes;

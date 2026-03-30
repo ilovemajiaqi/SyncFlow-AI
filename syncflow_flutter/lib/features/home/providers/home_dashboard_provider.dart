@@ -23,8 +23,7 @@ class HomeDashboardProvider extends ChangeNotifier {
   final EventReminderStore _reminderStore;
   final ReminderCoordinator _reminderCoordinator;
 
-  GlobalKey<AnimatedListState> _timelineListKey =
-      GlobalKey<AnimatedListState>();
+  GlobalKey<AnimatedListState> _timelineListKey = GlobalKey<AnimatedListState>();
   final TextEditingController textController = TextEditingController();
 
   DateTime _selectedDate = _normalizeDate(DateTime.now());
@@ -72,21 +71,20 @@ class HomeDashboardProvider extends ChangeNotifier {
     );
   }
 
-  EventReminderConfig? reminderConfigFor(int eventId) =>
-      _reminderStore.configFor(eventId);
+  EventReminderConfig? reminderConfigFor(int eventId) {
+    final stored = _reminderStore.configFor(eventId);
+    if (stored != null) {
+      return stored;
+    }
+    return buildDefaultReminderConfig();
+  }
 
   Future<void> saveReminderConfig(
     int eventId,
     EventReminderConfig config,
   ) async {
     await _reminderStore.saveFor(eventId, config);
-    EventModel? event;
-    for (final item in _allEvents) {
-      if (item.id == eventId) {
-        event = item;
-        break;
-      }
-    }
+    final event = _findEventInMemory(eventId);
     if (event != null) {
       await _reminderCoordinator.syncForEvent(event);
     }
@@ -94,6 +92,12 @@ class HomeDashboardProvider extends ChangeNotifier {
   }
 
   Future<void> disableReminder(int eventId) async {
+    await _reminderStore.disableFor(eventId);
+    await _reminderCoordinator.cancelForEvent(eventId);
+    notifyListeners();
+  }
+
+  Future<void> clearReminderPreference(int eventId) async {
     await _reminderStore.removeFor(eventId);
     await _reminderCoordinator.cancelForEvent(eventId);
     notifyListeners();
@@ -183,6 +187,16 @@ class HomeDashboardProvider extends ChangeNotifier {
     return List.unmodifiable(items);
   }
 
+  List<EventModel> conflictingEventsFor(EventModel event) {
+    return _allEvents
+        .where((candidate) => candidate.id != event.id && candidate.status == 1)
+        .where((candidate) => _eventsOverlap(event, candidate))
+        .toList(growable: false)
+      ..sort((a, b) => a.startTime.compareTo(b.startTime));
+  }
+
+  bool hasConflict(EventModel event) => conflictingEventsFor(event).isNotEmpty;
+
   Future<bool> submitTextIntent(BuildContext context) async {
     final text = textController.text.trim();
     if (text.isEmpty) {
@@ -225,7 +239,7 @@ class HomeDashboardProvider extends ChangeNotifier {
         ..hideCurrentSnackBar()
         ..showSnackBar(
           SnackBar(
-            content: Text(response.message),
+            content: Text(_composeIntentFeedback(response)),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -269,10 +283,18 @@ class HomeDashboardProvider extends ChangeNotifier {
       );
       _upsertEvent(updated, animated: true);
       await _reminderCoordinator.syncForEvent(updated);
+      final conflicts = await _repository.findConflictingEvents(
+        startTime: updated.startTime,
+        durationMinutes: updated.durationMinutes,
+        excludeEventId: updated.id,
+      );
       if (!context.mounted) {
         return;
       }
-      _showMessage(context, '本地日程已更新。');
+      final feedback = conflicts.isEmpty
+          ? '本地日程已更新。'
+          : '本地日程已更新，但与 ${conflicts.length} 个日程存在时间冲突。';
+      _showMessage(context, feedback);
     } catch (error) {
       if (!context.mounted) {
         return;
@@ -292,7 +314,7 @@ class HomeDashboardProvider extends ChangeNotifier {
       final deleted = await _repository.deleteEvent(eventId);
       _allEvents = _allEvents.where((event) => event.id != deleted.id).toList();
       _syncVisibleEvents(animated: true);
-      await disableReminder(eventId);
+      await clearReminderPreference(eventId);
       if (!context.mounted) {
         return;
       }
@@ -313,7 +335,7 @@ class HomeDashboardProvider extends ChangeNotifier {
       if (event.status == 1) {
         await _reminderCoordinator.syncForEvent(event);
       } else {
-        await disableReminder(event.id);
+        await clearReminderPreference(event.id);
       }
     }
   }
@@ -377,6 +399,33 @@ class HomeDashboardProvider extends ChangeNotifier {
     return (firstDay, lastDay);
   }
 
+  EventModel? _findEventInMemory(int eventId) {
+    for (final event in _allEvents) {
+      if (event.id == eventId) {
+        return event;
+      }
+    }
+    return null;
+  }
+
+  String _composeIntentFeedback(IntentParseResponse response) {
+    if (response.conflicts.isEmpty) {
+      return response.message;
+    }
+
+    final summary = response.conflicts
+        .where((item) => item.hasConflict)
+        .map(
+          (item) =>
+              '“${item.event.displayTitle}”与${item.conflictsWith.length}个日程冲突',
+        )
+        .join('；');
+    if (summary.isEmpty) {
+      return response.message;
+    }
+    return '${response.message}\n$summary';
+  }
+
   void _showMessage(BuildContext context, String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -394,6 +443,11 @@ class HomeDashboardProvider extends ChangeNotifier {
     final isTooSoon =
         DateTime.now().difference(submittedAt) < const Duration(seconds: 2);
     return isSamePayload && isTooSoon;
+  }
+
+  static bool _eventsOverlap(EventModel left, EventModel right) {
+    return left.startTime.isBefore(right.endTime) &&
+        left.endTime.isAfter(right.startTime);
   }
 
   static DateTime _normalizeDate(DateTime date) =>

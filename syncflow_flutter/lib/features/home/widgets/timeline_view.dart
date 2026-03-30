@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/reminders/event_reminder_store.dart';
+import '../../../core/reminders/system_alarm_bridge.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/event_model.dart';
 import '../providers/home_dashboard_provider.dart';
@@ -155,7 +156,7 @@ class _EmptyDayHint extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            DateFormat('M 月 d 日').format(date),
+            DateFormat('M月d日').format(date),
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w700,
             ),
@@ -187,7 +188,9 @@ class _TimelineEventRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasReminder = provider.reminderConfigFor(event.id)?.enabled == true;
+    final reminderConfig = provider.reminderConfigFor(event.id);
+    final hasReminder = reminderConfig?.enabled == true;
+    final conflicts = provider.conflictingEventsFor(event);
 
     return InkWell(
       borderRadius: BorderRadius.circular(22),
@@ -201,7 +204,7 @@ class _TimelineEventRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 78,
+            width: 88,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -220,29 +223,30 @@ class _TimelineEventRow extends StatelessWidget {
                 ),
                 if (hasReminder) ...[
                   const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppTheme.accentBlue.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      '已提醒',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: AppTheme.accentBlue,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                  _MiniTag(
+                    label: '默认提醒',
+                    background: AppTheme.accentBlue.withValues(alpha: 0.12),
+                    foreground: AppTheme.accentBlue,
+                  ),
+                ],
+                if (conflicts.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  _MiniTag(
+                    label: '冲突 ${conflicts.length}',
+                    background: Colors.redAccent.withValues(alpha: 0.12),
+                    foreground: Colors.redAccent,
                   ),
                 ],
               ],
             ),
           ),
           const SizedBox(width: 12),
-          Expanded(child: _EventCard(event: event)),
+          Expanded(
+            child: _EventCard(
+              event: event,
+              conflicts: conflicts,
+            ),
+          ),
         ],
       ),
     );
@@ -250,7 +254,8 @@ class _TimelineEventRow extends StatelessWidget {
 
   Future<void> _showEventActions(BuildContext context) async {
     final theme = Theme.of(context);
-    final hasReminder = provider.reminderConfigFor(event.id)?.enabled == true;
+    final reminderConfig = provider.reminderConfigFor(event.id);
+    final hasReminder = reminderConfig?.enabled == true;
 
     await showModalBottomSheet<void>(
       context: context,
@@ -268,11 +273,39 @@ class _TimelineEventRow extends StatelessWidget {
               children: [
                 ListTile(
                   leading: const Icon(Icons.notifications_active_outlined),
-                  title: Text(hasReminder ? '编辑提醒' : '设置提醒'),
-                  subtitle: const Text('设置通知中心提前时间与横幅提醒间隔'),
+                  title: Text(hasReminder ? '调整默认提醒' : '恢复默认提醒'),
+                  subtitle: const Text('通知中心和横幅提醒默认开启，也可以在这里单独调节。'),
                   onTap: () async {
                     Navigator.of(sheetContext).pop();
                     await _showReminderSheet(context);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.alarm_add_outlined),
+                  title: const Text('添加系统闹钟'),
+                  subtitle: const Text('跳转到系统闹钟界面，用事件时间预填并让用户自行确认。'),
+                  onTap: () async {
+                    Navigator.of(sheetContext).pop();
+                    final opened =
+                        await SystemAlarmBridge.openAlarmComposer(event);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            opened ? '已打开系统闹钟界面。' : '当前设备暂时无法直接打开闹钟界面。',
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.tune_outlined),
+                  title: const Text('检查通知权限'),
+                  subtitle: const Text('如果通知中心没有提醒，可直接打开系统通知设置和精确提醒授权。'),
+                  onTap: () async {
+                    Navigator.of(sheetContext).pop();
+                    await _showPermissionActions(context);
                   },
                 ),
                 ListTile(
@@ -286,13 +319,13 @@ class _TimelineEventRow extends StatelessWidget {
                 if (hasReminder)
                   ListTile(
                     leading: const Icon(Icons.notifications_off_outlined),
-                    title: const Text('关闭提醒'),
+                    title: const Text('关闭此事件提醒'),
                     onTap: () async {
                       Navigator.of(sheetContext).pop();
                       await provider.disableReminder(event.id);
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('已关闭该事件的提醒。')),
+                          const SnackBar(content: Text('已关闭该事件的默认提醒。')),
                         );
                       }
                     },
@@ -309,7 +342,7 @@ class _TimelineEventRow extends StatelessWidget {
                       builder: (dialogContext) {
                         return AlertDialog(
                           title: const Text('删除这条事件？'),
-                          content: Text('“${event.displayTitle}” 将从本地日程中移除。'),
+                          content: Text('“${event.displayTitle}”将从本地日程中移除。'),
                           actions: [
                             TextButton(
                               onPressed: () =>
@@ -339,9 +372,80 @@ class _TimelineEventRow extends StatelessWidget {
     provider.finishEventAction();
   }
 
+  Future<void> _showPermissionActions(BuildContext context) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Theme.of(context).cardTheme.color,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '系统提醒排查',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                const Text('如果通知中心没有收到提醒，先确认应用通知已开启，再确认系统允许精确提醒。'),
+                const SizedBox(height: 16),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.notifications_outlined),
+                  title: const Text('打开系统通知设置'),
+                  onTap: () async {
+                    final opened =
+                        await SystemAlarmBridge.openNotificationSettings();
+                    if (context.mounted) {
+                      Navigator.of(sheetContext).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            opened ? '已打开系统通知设置。' : '当前设备暂时无法直接打开通知设置。',
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.alarm_on_outlined),
+                  title: const Text('打开精确提醒授权'),
+                  onTap: () async {
+                    final opened =
+                        await SystemAlarmBridge.openExactAlarmSettings();
+                    if (context.mounted) {
+                      Navigator.of(sheetContext).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            opened ? '已尝试打开精确提醒授权页。' : '当前设备暂时无法直接打开授权页。',
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _showReminderSheet(BuildContext context) async {
-    final existing = provider.reminderConfigFor(event.id) ??
-        provider.buildDefaultReminderConfig();
+    final existing =
+        provider.reminderConfigFor(event.id) ?? provider.buildDefaultReminderConfig();
     bool enabled = existing.enabled;
     int centerLead = existing.notificationCenterLeadMinutes;
     int bannerLead = existing.bannerLeadMinutes;
@@ -387,8 +491,8 @@ class _TimelineEventRow extends StatelessWidget {
                   const SizedBox(height: 16),
                   SwitchListTile.adaptive(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('为这个事件开启提醒'),
-                    subtitle: const Text('关闭后会取消该事件已注册的所有本地提醒。'),
+                    title: const Text('为这个事件保留默认提醒'),
+                    subtitle: const Text('关闭后将取消通知中心与横幅提醒。'),
                     value: enabled,
                     onChanged: (value) {
                       setModalState(() {
@@ -547,8 +651,8 @@ class _TimelineEventRow extends StatelessWidget {
                     },
                     child: InputDecorator(
                       decoration: const InputDecoration(labelText: '开始时间'),
-                      child: Text(
-                          DateFormat('yyyy-MM-dd HH:mm').format(draftTime)),
+                      child:
+                          Text(DateFormat('yyyy-MM-dd HH:mm').format(draftTime)),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -641,10 +745,44 @@ class _ReminderDropdownField extends StatelessWidget {
   }
 }
 
+class _MiniTag extends StatelessWidget {
+  const _MiniTag({
+    required this.label,
+    required this.background,
+    required this.foreground,
+  });
+
+  final String label;
+  final Color background;
+  final Color foreground;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: foreground,
+              fontWeight: FontWeight.w700,
+            ),
+      ),
+    );
+  }
+}
+
 class _EventCard extends StatelessWidget {
-  const _EventCard({required this.event});
+  const _EventCard({
+    required this.event,
+    required this.conflicts,
+  });
 
   final EventModel event;
+  final List<EventModel> conflicts;
 
   @override
   Widget build(BuildContext context) {
@@ -657,7 +795,9 @@ class _EventCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: theme.dividerColor),
+        border: Border.all(
+          color: conflicts.isNotEmpty ? Colors.redAccent : theme.dividerColor,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.05),
@@ -670,10 +810,11 @@ class _EventCard extends StatelessWidget {
         children: [
           Container(
             width: 5,
-            height: 92,
-            decoration: const BoxDecoration(
-              color: AppTheme.accentBlue,
-              borderRadius: BorderRadius.horizontal(left: Radius.circular(22)),
+            height: 112,
+            decoration: BoxDecoration(
+              color: conflicts.isNotEmpty ? Colors.redAccent : AppTheme.accentBlue,
+              borderRadius:
+                  const BorderRadius.horizontal(left: Radius.circular(22)),
             ),
           ),
           Expanded(
@@ -696,6 +837,16 @@ class _EventCard extends StatelessWidget {
                           theme.colorScheme.onSurface.withValues(alpha: 0.64),
                     ),
                   ),
+                  if (conflicts.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      '与 ${conflicts.map((item) => item.displayTitle).join('、')} 存在时间冲突',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.redAccent,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                   if (hasLocation) ...[
                     const SizedBox(height: 8),
                     Row(

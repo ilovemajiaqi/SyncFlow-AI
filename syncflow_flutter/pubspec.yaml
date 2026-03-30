@@ -1,8 +1,8 @@
-name: syncflow_flutter
+﻿name: syncflow_flutter
 description: SyncFlow AI Flutter MVP client.
 publish_to: "none"
 
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: ">=3.4.0 <4.0.0"
@@ -30,3 +30,4 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+

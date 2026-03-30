@@ -23,8 +23,8 @@ class ReminderCoordinator {
   }
 
   Future<void> syncForEvent(EventModel event) async {
-    final reminder = store.configFor(event.id);
-    if (reminder == null || !reminder.enabled || event.status != 1) {
+    final reminder = store.configFor(event.id) ?? _defaultReminder();
+    if (!reminder.enabled || event.status != 1) {
       await scheduler.cancelEventReminder(event.id);
       return;
     }
@@ -34,42 +34,56 @@ class ReminderCoordinator {
       reminder: reminder,
       defaults: settingsController.settings,
     );
+    await refreshPersistentOverview();
   }
 
   Future<void> cancelForEvent(int eventId) async {
     await scheduler.cancelEventReminder(eventId);
+    await refreshPersistentOverview();
   }
 
   Future<void> restoreScheduledReminders() async {
-    final reminderEntries = store.allConfigs.entries
-        .where((entry) => entry.value.enabled)
-        .toList(growable: false);
-
-    if (reminderEntries.isEmpty) {
-      return;
-    }
-
-    final events = await scheduleRepository.fetchActiveEventsByIds(
-      reminderEntries.map((entry) => entry.key),
-    );
+    final events = await scheduleRepository.fetchUpcomingActiveEvents();
     final now = DateTime.now();
-    final eventMap = <int, EventModel>{
-      for (final event in events)
-        if (event.endTime.isAfter(now)) event.id: event,
-    };
 
-    for (final entry in reminderEntries) {
-      final event = eventMap[entry.key];
-      if (event == null) {
-        await scheduler.cancelEventReminder(entry.key);
+    for (final event in events) {
+      if (event.endTime.isBefore(now)) {
+        await scheduler.cancelEventReminder(event.id);
         continue;
       }
-
+      final reminder = store.configFor(event.id) ?? _defaultReminder();
+      if (!reminder.enabled || event.status != 1) {
+        await scheduler.cancelEventReminder(event.id);
+        continue;
+      }
       await scheduler.syncEventReminder(
         event,
-        reminder: entry.value,
+        reminder: reminder,
         defaults: settingsController.settings,
       );
     }
+
+    await refreshPersistentOverview();
+  }
+
+  Future<void> refreshPersistentOverview() async {
+    final events = await scheduleRepository.fetchUpcomingActiveEvents();
+    final nextEvent = events.isEmpty ? null : events.first;
+    if (nextEvent == null) {
+      await scheduler.cancelPersistentOverview();
+      return;
+    }
+
+    await scheduler.syncPersistentOverview(nextEvent);
+  }
+
+  EventReminderConfig _defaultReminder() {
+    final settings = settingsController.settings;
+    return EventReminderConfig(
+      enabled: true,
+      notificationCenterLeadMinutes: settings.notificationCenterLeadMinutes,
+      bannerLeadMinutes: settings.bannerLeadMinutes,
+      bannerRepeatIntervalMinutes: settings.bannerRepeatIntervalMinutes,
+    );
   }
 }

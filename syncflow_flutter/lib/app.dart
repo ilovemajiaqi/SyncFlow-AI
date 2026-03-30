@@ -10,7 +10,7 @@ import 'data/repositories/schedule_repository.dart';
 import 'features/home/pages/home_dashboard_page.dart';
 import 'features/home/providers/home_dashboard_provider.dart';
 
-class SyncFlowApp extends StatelessWidget {
+class SyncFlowApp extends StatefulWidget {
   const SyncFlowApp({
     super.key,
     required this.settingsController,
@@ -25,14 +25,39 @@ class SyncFlowApp extends StatelessWidget {
   final ScheduleRepository scheduleRepository;
 
   @override
+  State<SyncFlowApp> createState() => _SyncFlowAppState();
+}
+
+class _SyncFlowAppState extends State<SyncFlowApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      widget.reminderCoordinator.restoreScheduledReminders();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<AppSettingsController>.value(
-            value: settingsController),
-        ChangeNotifierProvider<EventReminderStore>.value(value: reminderStore),
-        Provider<ReminderCoordinator>.value(value: reminderCoordinator),
-        Provider<ScheduleRepository>.value(value: scheduleRepository),
+            value: widget.settingsController),
+        ChangeNotifierProvider<EventReminderStore>.value(
+            value: widget.reminderStore),
+        Provider<ReminderCoordinator>.value(value: widget.reminderCoordinator),
+        Provider<ScheduleRepository>.value(value: widget.scheduleRepository),
         ChangeNotifierProvider<HomeDashboardProvider>(
           create: (context) => HomeDashboardProvider(
             repository: context.read<ScheduleRepository>(),

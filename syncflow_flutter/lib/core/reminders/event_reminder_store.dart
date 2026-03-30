@@ -83,6 +83,24 @@ class EventReminderStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> disableFor(int eventId) async {
+    final existing = _configs[eventId];
+    final disabledConfig = EventReminderConfig(
+      enabled: false,
+      notificationCenterLeadMinutes:
+          existing?.notificationCenterLeadMinutes ?? 120,
+      bannerLeadMinutes: existing?.bannerLeadMinutes ?? 15,
+      bannerRepeatIntervalMinutes:
+          existing?.bannerRepeatIntervalMinutes ?? 5,
+    );
+    _configs = <int, EventReminderConfig>{
+      ..._configs,
+      eventId: disabledConfig,
+    };
+    await _persist();
+    notifyListeners();
+  }
+
   Future<void> _persist() async {
     final payload = <String, dynamic>{
       for (final entry in _configs.entries) entry.key.toString(): entry.value.toJson(),
