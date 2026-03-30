@@ -72,24 +72,24 @@ SyncFlow AI 是一款基于 LLM 的智能任务管理工具，通过自然语言
     <td width="50%" valign="top">
       <h3>🏠 首页总览</h3>
       <p>展示今日任务、时间分布与核心操作入口。</p>
-      <img src="./assets/screenshots/home.png" alt="SyncFlow 首页总览" width="100%" />
+      <img src="./assets/screenshots/home.svg" alt="SyncFlow 首页总览" width="100%" />
     </td>
     <td width="50%" valign="top">
       <h3>🕒 时间线视图</h3>
       <p>按时间顺序呈现事件编排，强化日程感知。</p>
-      <img src="./assets/screenshots/timeline.png" alt="SyncFlow 时间线视图" width="100%" />
+      <img src="./assets/screenshots/timeline.svg" alt="SyncFlow 时间线视图" width="100%" />
     </td>
   </tr>
   <tr>
     <td width="50%" valign="top">
       <h3>⚙️ 设置中心</h3>
       <p>配置 API Key、模型参数与默认行为。</p>
-      <img src="./assets/screenshots/settings.png" alt="SyncFlow 设置中心" width="100%" />
+      <img src="./assets/screenshots/settings.svg" alt="SyncFlow 设置中心" width="100%" />
     </td>
     <td width="50%" valign="top">
       <h3>🎙️ 自然语言输入区</h3>
       <p>通过一句话完成任务录入与调度触发。</p>
-      <img src="./assets/screenshots/input.png" alt="SyncFlow 自然语言输入区" width="100%" />
+      <img src="./assets/screenshots/input.svg" alt="SyncFlow 自然语言输入区" width="100%" />
     </td>
   </tr>
 </table>
@@ -100,6 +100,8 @@ SyncFlow AI 是一款基于 LLM 的智能任务管理工具，通过自然语言
 - `assets/screenshots/timeline.png`
 - `assets/screenshots/settings.png`
 - `assets/screenshots/input.png`
+
+当前已内置同名用途的 `.svg` 占位图，后续替换为正式截图即可。
 
 ---
 
@@ -314,10 +316,17 @@ flutter run
   - 后端已支持事件增删改查与意图解析接口。
   - 支持 Ark / Doubao 兼容的大模型接入方式。
 
-- **v1.x: 下一阶段迭代**
-  - 引入更稳定的模糊语义检索与时间推断能力。
-  - 优化冲突检测、连续事件编排与时间段推荐。
-  - 增加更完整的自动化测试和发布流程。
+- **v1.1: 搜索与检索**
+  - 增加自然语言搜索功能，支持按关键词、语义和时间条件快速检索日程。
+  - 提升模糊语义检索能力，让“下午的会”“上周那个任务”这类表达也能命中。
+
+- **v1.2: 调度与冲突优化**
+  - 优化时间冲突检测、连续事件编排与时间段推荐。
+  - 增强模糊时间推断能力，提升复杂输入场景下的可用性。
+
+- **v1.3: 测试与发布完善**
+  - 增加更完整的自动化测试与发布流程。
+  - 完善版本管理、构建产物校验与发布前检查机制。
 
 ---
 

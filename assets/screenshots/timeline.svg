@@ -1,0 +1,14 @@
+<svg width="1280" height="720" viewBox="0 0 1280 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1280" height="720" rx="36" fill="#F8F7F2"/>
+  <rect x="36" y="36" width="1208" height="648" rx="28" fill="#FFFFFF" stroke="#E6DFC8" stroke-width="2"/>
+  <rect x="88" y="88" width="320" height="24" rx="12" fill="#F3D79A"/>
+  <line x1="160" y1="170" x2="160" y2="590" stroke="#D6B56C" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="160" cy="220" r="18" fill="#F59E0B"/>
+  <circle cx="160" cy="340" r="18" fill="#F59E0B"/>
+  <circle cx="160" cy="460" r="18" fill="#F59E0B"/>
+  <rect x="220" y="188" width="880" height="64" rx="20" fill="#FFF8E8"/>
+  <rect x="220" y="308" width="760" height="64" rx="20" fill="#FFF8E8"/>
+  <rect x="220" y="428" width="920" height="64" rx="20" fill="#FFF8E8"/>
+  <text x="76" y="625" fill="#0F172A" font-size="42" font-family="Segoe UI, Arial, sans-serif" font-weight="700">时间线视图占位</text>
+  <text x="76" y="665" fill="#475569" font-size="24" font-family="Segoe UI, Arial, sans-serif">替换为 assets/screenshots/timeline.png 或保持此占位图</text>
+</svg>

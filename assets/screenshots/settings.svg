@@ -1,0 +1,12 @@
+<svg width="1280" height="720" viewBox="0 0 1280 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1280" height="720" rx="36" fill="#F5F4FB"/>
+  <rect x="36" y="36" width="1208" height="648" rx="28" fill="#FFFFFF" stroke="#DCD9F2" stroke-width="2"/>
+  <rect x="88" y="92" width="300" height="28" rx="14" fill="#CFC6F6"/>
+  <rect x="88" y="164" width="1104" height="92" rx="22" fill="#F7F5FF"/>
+  <rect x="88" y="286" width="1104" height="92" rx="22" fill="#F7F5FF"/>
+  <rect x="88" y="408" width="1104" height="92" rx="22" fill="#F7F5FF"/>
+  <rect x="88" y="530" width="560" height="92" rx="22" fill="#EEE9FF"/>
+  <rect x="1016" y="548" width="140" height="56" rx="28" fill="#8B5CF6"/>
+  <text x="76" y="625" fill="#0F172A" font-size="42" font-family="Segoe UI, Arial, sans-serif" font-weight="700">设置中心截图占位</text>
+  <text x="76" y="665" fill="#475569" font-size="24" font-family="Segoe UI, Arial, sans-serif">替换为 assets/screenshots/settings.png 或保持此占位图</text>
+</svg>

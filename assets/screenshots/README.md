@@ -9,6 +9,15 @@
 - `settings.png`：设置中心
 - `input.png`：自然语言输入区
 
+当前目录已内置对应的 `.svg` 占位图：
+
+- `home.svg`
+- `timeline.svg`
+- `settings.svg`
+- `input.svg`
+
+README 目前默认展示这些占位图，因此在没有正式截图时页面也能正常显示。
+
 建议截图规范：
 
 - 优先使用 `PNG`
