@@ -29,13 +29,13 @@ SyncFlow AI 是一款基于 LLM 的智能任务管理工具，通过自然语言
 graph TD
     User((用户)) -->|自然语言输入| App[Flutter Mobile App]
     
-    subgraph 本地核心层 (Local-First)
+    subgraph LocalLayer [本地核心层 Local-First]
         App -->|1. 读取配置 API Key| Prefs[(SharedPreferences)]
         App -->|4. 持久化存储日程| DB[(SQLite 本地数据库)]
         App -->|5. 注册定时闹钟| Notification[系统本地通知]
     end
     
-    subgraph 云端大模型层 (Model-Agnostic)
+    subgraph CloudLayer [云端大模型层 Model-Agnostic]
         App -->|2. 组装 Prompt 直连请求| LLM[通用大模型 API<br>Doubao / DeepSeek / etc.]
         LLM -->|3. 返回 Structured JSON| App
     end
